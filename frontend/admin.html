@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Admin Panel — Beasiswa Sawit</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Sora', 'sans-serif'], serif: ['Instrument Serif', 'serif'] },
+      colors: {
+        ink:  { 50:'#f4f4f6',100:'#e9e9ed',200:'#d2d2db',300:'#ababbc',400:'#7e7e97',500:'#5f5f7a',600:'#4a4a63',700:'#3b3b52',800:'#2e2e40',900:'#1e1e2e',950:'#13131e' },
+        lime: { 50:'#f5ffe8',100:'#e8ffc4',200:'#d1ff8a',300:'#b2f451',400:'#92e020',500:'#72c408',600:'#559608',700:'#416f0b',800:'#365810',900:'#2e4a12' },
+        amber:{ 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309' },
+        rose: { 50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',400:'#fb7185',500:'#f43f5e',600:'#e11d48',700:'#be123c' },
+      },
+      animation: {
+        'fade-in':  'fadeIn .3s ease-out',
+        'slide-up': 'slideUp .3s cubic-bezier(.16,1,.3,1)',
+        'slide-in': 'slideIn .28s cubic-bezier(.16,1,.3,1)',
+      },
+      keyframes: {
+        fadeIn:  { from:{ opacity:'0' },                             to:{ opacity:'1' } },
+        slideUp: { from:{ opacity:'0', transform:'translateY(12px)' }, to:{ opacity:'1', transform:'translateY(0)' } },
+        slideIn: { from:{ opacity:'0', transform:'translateX(-12px)' }, to:{ opacity:'1', transform:'translateX(0)' } },
+      },
+    }
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Sora',sans-serif;background:#13131e;color:#e9e9ed;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3b3b52;border-radius:9px}
+.input-dark{background:#2e2e40;border:1.5px solid #3b3b52;color:#e9e9ed;border-radius:10px;padding:.6rem .85rem;font-size:.85rem;width:100%;transition:border-color .15s,box-shadow .15s;outline:none;font-family:'Sora',sans-serif}
+.input-dark::placeholder{color:#5f5f7a}
+.input-dark:focus{border-color:#72c408;box-shadow:0 0 0 3px rgba(114,196,8,.15)}
+.input-dark:disabled{opacity:.5;cursor:not-allowed}
+select.input-dark option{background:#2e2e40;color:#e9e9ed}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:9px;font-weight:600;font-size:.8rem;cursor:pointer;transition:all .15s;border:none;font-family:'Sora',sans-serif;line-height:1}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#559608,#72c408);color:#fff;box-shadow:0 2px 8px rgba(114,196,8,.25)}
+.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#416f0b,#559608)}
+.btn-amber{background:#fbbf24;color:#1e1e2e}
+.btn-amber:hover:not(:disabled){background:#f59e0b}
+.btn-danger{background:#be123c;color:#fff}
+.btn-danger:hover:not(:disabled){background:#9f1239}
+.btn-ghost{background:transparent;color:#ababbc;border:1.5px solid #3b3b52}
+.btn-ghost:hover:not(:disabled){border-color:#5f5f7a;color:#e9e9ed;background:#2e2e40}
+.card{background:#1e1e2e;border:1.5px solid #2e2e40;border-radius:16px}
+.badge{display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:99px;font-size:.7rem;font-weight:600;letter-spacing:.03em}
+.badge-admin{background:#2e2e40;color:#b2f451;border:1px solid #416f0b}
+.badge-peserta{background:#2e2e40;color:#ababbc;border:1px solid #3b3b52}
+.pill-correct{background:#1a2e10;color:#b2f451;border:1px solid #416f0b;padding:.15rem .5rem;border-radius:6px;font-size:.7rem;font-weight:600}
+.pill-wrong{background:#2e2030;color:#ababbc;border:1px solid #3b3b52;padding:.15rem .5rem;border-radius:6px;font-size:.7rem}
+.sidebar-item{display:flex;align-items:center;gap:.65rem;padding:.6rem .85rem;border-radius:10px;cursor:pointer;font-size:.83rem;font-weight:500;color:#7e7e97;transition:all .15s;user-select:none}
+.sidebar-item:hover{background:#2e2e40;color:#d2d2db}
+.sidebar-item.active{background:linear-gradient(135deg,rgba(85,150,8,.2),rgba(114,196,8,.1));color:#b2f451;border:1px solid rgba(114,196,8,.2)}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,10,18,.7);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:640px){.modal-overlay{align-items:center;padding:1rem}}
+.modal-box{background:#1e1e2e;border:1.5px solid #2e2e40;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;animation:slideUp .3s cubic-bezier(.16,1,.3,1)}
+@media(min-width:640px){.modal-box{border-radius:20px}}
+.soal-card{background:#1e1e2e;border:1.5px solid #2e2e40;border-radius:14px;padding:1.1rem 1.25rem;transition:border-color .15s}
+.soal-card:hover{border-color:#3b3b52}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overlay-sidebar{position:fixed;inset:0;background:rgba(10,10,18,.6);z-index:40;display:none}
+@media(max-width:767px){.overlay-sidebar.show{display:block}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════ ADMIN LAYOUT ═══════════════════ -->
+<div v-if="page === 'admin'" class="flex h-screen overflow-hidden" style="background:#13131e">
+
+  <!-- Mobile sidebar overlay -->
+  <div class="overlay-sidebar" :class="{ show: mobileNav }" @click="mobileNav=false"></div>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="fixed md:relative z-50 md:z-auto flex flex-col h-full w-64 flex-shrink-0 border-r border-ink-800 transition-transform duration-300"
+         style="background:#1a1a28"
+         :style="mobileNav ? 'transform:translateX(0)' : ''">
+    <!-- Hide off-screen on mobile -->
+    <div class="md:hidden absolute inset-y-0 left-0 w-full"
+         :class="mobileNav ? '' : '-translate-x-full'"
+         style="transform: inherit"></div>
+
+    <!-- Brand -->
+    <div class="px-5 py-5 border-b border-ink-800 flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-white p-1 overflow-hidden flex-shrink-0 shadow-sm">
+        <img src="./assets/logo-web.jpg" alt="Logo Admin" class="w-full h-full object-contain" />
+      </div>
+      <div>
+        <p class="font-bold text-sm text-white leading-none">Beasiswa Sawit</p>
+        <p class="text-ink-500 text-xs mt-0.5">Admin Panel</p>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <div @click="switchMenu('users')"
+           class="sidebar-item" :class="{ active: menu === 'users' }">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Manajemen User
+      </div>
+      <div @click="switchMenu('aktivitas')"
+           class="sidebar-item" :class="{ active: menu === 'aktivitas' }">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M9 12h6m-6 4h6M7 7h10M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Monitoring Aktivitas
+      </div>
+      <div @click="switchMenu('kategori')"
+           class="sidebar-item" :class="{ active: menu === 'kategori' }">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        Manajemen Kategori
+      </div>
+      <div @click="switchMenu('soal')"
+           class="sidebar-item" :class="{ active: menu === 'soal' }">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        Manajemen Soal
+      </div>
+    </nav>
+
+    <!-- User info + Logout -->
+    <div class="px-3 py-4 border-t border-ink-800">
+      <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-ink-900/50 mb-2">
+        <div class="w-8 h-8 rounded-lg bg-lime-700/30 border border-lime-700/40 flex items-center justify-center flex-shrink-0">
+          <span class="text-lime-400 font-bold text-xs">{{ adminName[0] }}</span>
+        </div>
+        <div class="min-w-0">
+          <p class="text-white text-xs font-semibold truncate">{{ adminName }}</p>
+          <p class="text-ink-500 text-xs">Administrator</p>
+        </div>
+      </div>
+      <button @click="doLogout" class="sidebar-item w-full text-rose-500 hover:text-rose-300 hover:bg-rose-900/20">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Top bar -->
+    <header class="flex-shrink-0 flex items-center gap-4 px-5 h-14 border-b border-ink-800" style="background:#1a1a28">
+      <button @click="mobileNav=!mobileNav" class="md:hidden p-1.5 rounded-lg hover:bg-ink-800 text-ink-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h2 class="font-bold text-sm text-white">
+        {{ menu === 'users' ? 'Manajemen User' : menu === 'soal' ? 'Manajemen Bank Soal' : 'Monitoring Aktivitas' }}
+      </h2>
+      <div class="ml-auto flex items-center gap-2">
+        <span v-if="saving" class="text-xs text-lime-400 flex items-center gap-1.5">
+          <span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span> Menyimpan...
+        </span>
+        <span v-if="saveOk" class="text-xs text-lime-400 animate-fade-in">✓ Tersimpan</span>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+
+      <!-- ─── MANAJEMEN USER ─── -->
+      <div v-if="menu === 'users'" class="animate-fade-in max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <p class="text-xs text-ink-500 mt-0.5">{{ users.length }} user terdaftar</p>
+          </div>
+          <button @click="openUserModal()" class="btn btn-primary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+            Tambah User
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="loadingUsers" class="space-y-3">
+          <div v-for="i in 5" :key="i" class="card p-4 animate-pulse">
+            <div class="flex gap-4"><div class="w-10 h-10 rounded-xl bg-ink-800"></div><div class="flex-1 space-y-2"><div class="h-3 bg-ink-800 rounded w-1/3"></div><div class="h-2.5 bg-ink-800 rounded w-1/2"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Desktop table -->
+        <div v-else class="hidden sm:block card overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-ink-800">
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">User</th>
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Role</th>
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider hidden lg:table-cell">Tgl. Daftar</th>
+                <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(u, i) in users" :key="u.id"
+                  class="border-b border-ink-800/50 hover:bg-ink-800/30 transition-colors"
+                  :class="{ 'border-b-0': i === users.length-1 }">
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-xs"
+                         :class="u.role === 'admin' ? 'bg-lime-900/40 text-lime-400 border border-lime-700/30' : 'bg-ink-800 text-ink-400 border border-ink-700'">
+                      {{ u.nama_lengkap[0].toUpperCase() }}
+                    </div>
+                    <div>
+                      <p class="font-semibold text-white text-sm">{{ u.nama_lengkap }}</p>
+                      <p class="text-ink-500 text-xs">{{ u.email }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <span :class="u.role === 'admin' ? 'badge badge-admin' : 'badge badge-peserta'">
+                    {{ u.role }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-ink-500 text-xs hidden lg:table-cell">{{ fmtDate(u.created_at) }}</td>
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-2 justify-end">
+                    <button @click="openUserModal(u)" class="btn btn-ghost" style="padding:.4rem .7rem">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      Edit
+                    </button>
+                    <button @click="deleteUser(u)" class="btn btn-danger" style="padding:.4rem .7rem">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      Hapus
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="users.length === 0" class="text-center py-16 text-ink-500">
+            <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p class="text-sm">Belum ada user.</p>
+          </div>
+        </div>
+
+        <!-- Mobile cards -->
+        <div v-if="!loadingUsers" class="sm:hidden space-y-3">
+          <div v-if="users.length === 0" class="text-center py-12 text-ink-500 text-sm">Belum ada user.</div>
+          <div v-for="u in users" :key="u.id+'m'" class="card p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                   :class="u.role === 'admin' ? 'bg-lime-900/40 text-lime-400' : 'bg-ink-800 text-ink-400'">
+                {{ u.nama_lengkap[0].toUpperCase() }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold text-white text-sm">{{ u.nama_lengkap }}</p>
+                  <span :class="u.role === 'admin' ? 'badge badge-admin' : 'badge badge-peserta'">{{ u.role }}</span>
+                </div>
+                <p class="text-ink-500 text-xs mt-0.5">{{ u.email }}</p>
+                <p class="text-ink-600 text-xs mt-0.5">{{ fmtDate(u.created_at) }}</p>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button @click="openUserModal(u)" class="btn btn-ghost flex-1 text-xs">✏ Edit</button>
+              <button @click="deleteUser(u)" class="btn btn-danger flex-1 text-xs">🗑 Hapus</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── MANAJEMEN SOAL ─── -->
+      <div v-else-if="menu === 'aktivitas'" class="animate-fade-in max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <p class="text-xs text-ink-500 mt-0.5">{{ activityList.length }} aktivitas peserta</p>
+          </div>
+        </div>
+
+        <div v-if="loadingActivity" class="space-y-3">
+          <div v-for="i in 4" :key="i" class="card p-4 animate-pulse">
+            <div class="h-3 bg-ink-800 rounded w-1/3 mb-4"></div>
+            <div class="space-y-2"><div class="h-2 bg-ink-800 rounded"></div><div class="h-2 bg-ink-800 rounded w-5/6"></div></div>
+          </div>
+        </div>
+
+        <div v-else class="card overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-ink-800">
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Peserta</th>
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Kategori</th>
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Status</th>
+                <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Skor</th>
+                <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider hidden md:table-cell">Progress</th>
+                <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider hidden xl:table-cell">Mulai</th>
+                <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Aksi</th>
+                <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider hidden xl:table-cell">Selesai</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="act in activityList" :key="act.sesi_id" class="border-b border-ink-800/50 hover:bg-ink-800/30 transition-colors">
+                <td class="px-5 py-4">
+                  <div class="font-semibold text-white text-sm">{{ act.nama_lengkap }}</div>
+                  <div class="text-ink-500 text-xs">{{ act.email }}</div>
+                </td>
+                <td class="px-5 py-4 text-ink-300 text-sm">{{ act.nama_kategori }}</td>
+                <td class="px-5 py-4">
+                  <span :class="act.status === 'selesai' ? 'badge badge-admin' : 'badge badge-peserta'">{{ act.status }}</span>
+                </td>
+                <td class="px-5 py-4 text-right text-white font-semibold">{{ act.skor_akhir != null ? act.skor_akhir : '-' }}</td>
+                <td class="px-5 py-4 text-right text-ink-300 hidden md:table-cell">
+                  {{ act.total_dijawab }}/{{ act.total_soal }}
+                </td>
+                <td class="px-5 py-4 text-right text-ink-500 text-xs hidden xl:table-cell">{{ fmtDate(act.waktu_mulai) }}</td>
+                <td class="px-5 py-4 text-right text-ink-500 text-xs hidden xl:table-cell">{{ act.waktu_habis ? fmtDate(act.waktu_habis) : '-' }}</td>
+                <td class="px-5 py-4 text-right">
+                  <div class="flex flex-col gap-2 items-end">
+                    <button @click="openLockSoalModal(act.sesi_id, act.nama_lengkap, act.nama_kategori)"
+                            class="btn btn-sky text-xs px-3 py-2">
+                      🔒 Kunci Soal
+                    </button>
+                    <button v-if="act.status === 'selesai'"
+                            @click="reopenSession(act.sesi_id)"
+                            class="btn btn-amber text-xs px-3 py-2">
+                      Buka Ulang
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="!loadingActivity && activityList.length === 0" class="text-center py-16 text-ink-500">
+          Belum ada aktivitas peserta.
+        </div>
+      </div>
+
+      <div v-else-if="menu === 'kategori'" class="animate-fade-in max-w-5xl mx-auto">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
+            <div>
+              <p class="text-sm text-ink-500">Daftar kategori psikotes dan durasi yang dapat diakses peserta.</p>
+              <p class="text-xs text-ink-500 mt-0.5">Kategori baru akan muncul secara otomatis di dashboard peserta.</p>
+            </div>
+            <button @click="openKategoriModal()" class="btn btn-primary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+              Tambah Kategori
+            </button>
+          </div>
+
+          <div class="card overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-ink-800">
+                  <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Kategori</th>
+                  <th class="text-left px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Durasi (menit)</th>
+                  <th class="text-right px-5 py-3.5 text-ink-500 text-xs font-semibold uppercase tracking-wider">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="k in kategoriList" :key="k.id" class="border-b border-ink-800/50 hover:bg-ink-800/30 transition-colors">
+                  <td class="px-5 py-4 text-white">{{ k.nama_kategori }}</td>
+                  <td class="px-5 py-4 text-ink-400">{{ k.durasi_menit }}</td>
+                  <td class="px-5 py-4 text-right">
+                    <button @click="openKategoriModal(k)" class="btn btn-ghost text-xs px-3 py-2">Edit</button>
+                    <button @click="deleteKategori(k)" class="btn btn-danger text-xs px-3 py-2">Hapus</button>
+                  </td>
+                </tr>
+                <tr v-if="kategoriList.length === 0">
+                  <td colspan="3" class="px-5 py-10 text-center text-ink-500">Belum ada kategori. Tambahkan kategori baru untuk ditampilkan ke peserta.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+      </div>
+
+      <div v-else-if="menu === 'soal'" class="animate-fade-in max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <p class="text-xs text-ink-500">{{ filteredSoalList.length }} dari {{ soalList.length }} soal di bank soal</p>
+            <div class="flex items-center gap-2">
+              <label class="text-ink-500 text-xs font-semibold">Filter:</label>
+              <select v-model="selectedKategoriFilter" class="input-dark text-xs" style="min-width:180px;">
+                <option value="">Semua Kategori</option>
+                <option v-for="k in kategoriList" :key="k.id" :value="String(k.id)">{{ k.nama_kategori }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button @click="loadSoal()" :disabled="loadingSoal"
+                    class="btn btn-secondary inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4.05 11a8 8 0 0113.9-5.65M19.95 13a8 8 0 01-13.9 5.65M4.05 11H1m22 2h-3.05"/></svg>
+              Refresh
+            </button>
+            <button @click="openSoalModal()" class="btn btn-primary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+              Tambah Soal
+            </button>
+          </div>
+        </div>
+
+        <div v-if="loadingSoal" class="space-y-3">
+          <div v-for="i in 4" :key="i" class="card p-5 animate-pulse">
+            <div class="h-3 bg-ink-800 rounded w-3/4 mb-3"></div>
+            <div class="h-2.5 bg-ink-800 rounded w-1/2 mb-4"></div>
+            <div class="space-y-2"><div class="h-2 bg-ink-800 rounded w-full"></div><div class="h-2 bg-ink-800 rounded w-5/6"></div></div>
+          </div>
+        </div>
+
+        <div v-else class="space-y-4">
+          <div v-if="filteredSoalList.length === 0" class="text-center py-16 text-ink-500">
+            <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <p class="text-sm">{{ soalList.length === 0 ? 'Bank soal masih kosong.' : 'Tidak ada soal pada kategori ini.' }}</p>
+          </div>
+
+          <div v-for="(s, i) in filteredSoalList" :key="s.id" class="soal-card animate-slide-up" :style="`animation-delay:${i*40}ms`">
+            <div class="flex items-start gap-3 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-lime-900/30 border border-lime-700/30 flex items-center justify-center flex-shrink-0 text-lime-400 text-xs font-bold mt-0.5">
+                {{ i+1 }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-3 flex-wrap">
+                  <span class="text-xs font-semibold text-lime-400 bg-lime-900/20 border border-lime-700/20 px-2 py-0.5 rounded-full">{{ s.nama_kategori }}</span>
+                  <div class="flex gap-2 flex-shrink-0">
+                    <button @click="openSoalModal(s)" class="btn btn-ghost" style="padding:.35rem .65rem;font-size:.72rem">✏ Edit</button>
+                    <button @click="deleteSoal(s)" class="btn btn-danger" style="padding:.35rem .65rem;font-size:.72rem">🗑 Hapus</button>
+                  </div>
+                </div>
+                <p class="text-white text-sm mt-2 leading-relaxed">{{ s.teks_soal }}</p>
+                <!-- Gambar preview -->
+                <img v-if="s.url_gambar" :src="s.url_gambar" alt="Gambar soal"
+                     class="mt-3 max-h-40 rounded-xl border border-ink-700 object-contain bg-ink-900/50" />
+              </div>
+            </div>
+
+            <!-- Pilihan jawaban -->
+            <div class="pl-10 grid grid-cols-1 gap-1.5">
+              <div v-for="(p, pi) in s.pilihan" :key="p.id"
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-colors"
+                   :class="p.is_benar ? 'bg-lime-900/20 border border-lime-700/30' : 'bg-ink-900/50 border border-ink-800'">
+                <span class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 font-bold text-xs"
+                      :class="p.is_benar ? 'bg-lime-500 text-ink-900' : 'bg-ink-700 text-ink-400'">
+                  {{ String.fromCharCode(65+pi) }}
+                </span>
+                <span :class="p.is_benar ? 'text-lime-300 font-medium' : 'text-ink-300'">{{ p.teks_pilihan }}</span>
+                <span v-if="p.is_benar" class="ml-auto pill-correct">✓ Benar</span>
+                <span v-else class="ml-auto text-ink-600 text-xs">{{ p.poin }} poin</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div><!-- end admin layout -->
+
+<!-- ══════════════ MODAL USER ══════════════ -->
+<div v-if="userModal.show" class="modal-overlay" @click.self="userModal.show=false">
+  <div class="modal-box p-6 sm:p-7">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-bold text-white text-base">{{ userModal.mode === 'add' ? 'Tambah User Baru' : 'Edit User' }}</h3>
+      <button @click="userModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Nama Lengkap</label>
+        <input v-model="userForm.nama_lengkap" class="input-dark" placeholder="Nama lengkap user" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Email</label>
+        <input v-model="userForm.email" type="email" class="input-dark" placeholder="email@contoh.com" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">
+          Password <span v-if="userModal.mode === 'edit'" class="normal-case font-normal text-ink-600">(kosongkan jika tidak diubah)</span>
+        </label>
+        <input v-model="userForm.password" type="password" class="input-dark" placeholder="••••••••" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Role</label>
+        <select v-model="userForm.role" class="input-dark">
+          <option value="peserta">Peserta</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+
+    <div v-if="userModal.err" class="mt-4 px-4 py-2.5 rounded-xl bg-rose-900/30 border border-rose-800 text-rose-300 text-sm">
+      {{ userModal.err }}
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button @click="userModal.show=false" class="btn btn-ghost flex-1">Batal</button>
+      <button @click="saveUser" :disabled="userModal.loading" class="btn btn-primary flex-1 py-3">
+        <span v-if="userModal.loading" class="spinner"></span>
+        <span v-else>{{ userModal.mode === 'add' ? 'Simpan User' : 'Update User' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL SOAL ══════════════ -->
+<div v-if="soalModal.show" class="modal-overlay" @click.self="soalModal.show=false">
+  <div class="modal-box p-6 sm:p-7">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-bold text-white text-base">{{ soalModal.mode === 'add' ? 'Tambah Soal Baru' : 'Edit Soal' }}</h3>
+      <button @click="soalModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Kategori -->
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Kategori Psikotes</label>
+        <select v-model="soalForm.kategori_id" class="input-dark">
+          <option value="" disabled>-- Pilih kategori --</option>
+          <option v-for="k in kategoriList" :key="k.id" :value="k.id">{{ k.nama_kategori }}</option>
+        </select>
+      </div>
+
+      <!-- Teks Soal -->
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Teks Soal</label>
+        <textarea v-model="soalForm.teks_soal" rows="4" class="input-dark resize-none" placeholder="Tulis pertanyaan soal di sini..."></textarea>
+      </div>
+
+      <!-- Upload Gambar -->
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Gambar Soal <span class="normal-case font-normal text-ink-600">(opsional)</span></label>
+
+        <!-- Preview gambar yang sudah ada (mode edit) atau yang baru dipilih -->
+        <div v-if="soalForm.url_gambar" class="mb-2 relative inline-block">
+          <img :src="soalForm.url_gambar" class="max-h-36 rounded-xl border border-ink-700 object-contain bg-ink-900" />
+          <button @click="soalForm.url_gambar=''" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-600 text-white text-xs flex items-center justify-center">✕</button>
+        </div>
+
+        <label class="flex items-center gap-3 cursor-pointer border-2 border-dashed border-ink-700 hover:border-lime-600 rounded-xl px-4 py-3 transition-colors group">
+          <svg class="w-5 h-5 text-ink-500 group-hover:text-lime-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span class="text-xs text-ink-500 group-hover:text-lime-400">{{ soalForm.url_gambar ? 'Ganti gambar' : 'Pilih gambar dari perangkat' }}</span>
+          <input type="file" accept="image/*" class="hidden" @change="handleImageUpload" />
+        </label>
+        <p class="text-ink-600 text-xs mt-1">Format: JPG, PNG, GIF, WebP (maks. 2MB). Dikonversi ke Base64.</p>
+      </div>
+
+      <!-- Pilihan Jawaban -->
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-2 uppercase tracking-wider">Opsi Jawaban (A – E)</label>
+        <div class="space-y-2">
+          <div v-for="(p, pi) in soalForm.pilihan" :key="pi"
+               class="flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors"
+               :class="p.is_benar ? 'border-lime-700/50 bg-lime-900/15' : 'border-ink-700 bg-ink-900/50'">
+            <!-- Label -->
+            <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  :class="p.is_benar ? 'bg-lime-500 text-ink-900' : 'bg-ink-700 text-ink-400'">
+              {{ String.fromCharCode(65+pi) }}
+            </span>
+            <!-- Teks -->
+            <input v-model="p.teks_pilihan" class="input-dark flex-1" :placeholder="`Opsi ${String.fromCharCode(65+pi)}`" style="padding:.45rem .7rem" />
+            <!-- Poin -->
+            <input v-model.number="p.poin" type="number" min="0" class="input-dark text-center" style="width:60px;padding:.45rem .4rem" placeholder="Poin" />
+            <!-- Checkbox is_benar -->
+            <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 select-none" title="Tandai sebagai jawaban benar">
+              <input type="checkbox" v-model="p.is_benar" @change="onBenarChange(pi)"
+                     class="w-4 h-4 accent-lime-500 rounded cursor-pointer" />
+              <span class="text-xs" :class="p.is_benar ? 'text-lime-400' : 'text-ink-500'">Benar</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div><!-- end form fields -->
+
+    <div v-if="soalModal.err" class="mt-4 px-4 py-2.5 rounded-xl bg-rose-900/30 border border-rose-800 text-rose-300 text-sm">
+      {{ soalModal.err }}
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button @click="soalModal.show=false" class="btn btn-ghost flex-1">Batal</button>
+      <button @click="saveSoal" :disabled="soalModal.loading" class="btn btn-primary flex-1 py-3">
+        <span v-if="soalModal.loading" class="spinner"></span>
+        <span v-else>{{ soalModal.mode === 'add' ? 'Simpan Soal' : 'Update Soal' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL KATEGORI ══════════════ -->
+<div v-if="kategoriModal.show" class="modal-overlay" @click.self="kategoriModal.show=false">
+  <div class="modal-box p-6 sm:p-7">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-bold text-white text-base">{{ kategoriModal.mode === 'add' ? 'Tambah Kategori' : 'Edit Kategori' }}</h3>
+      <button @click="kategoriModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Nama Kategori</label>
+        <input v-model="kategoriForm.nama_kategori" class="input-dark" placeholder="Contoh: Tes Koran" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wider">Durasi (menit)</label>
+        <input v-model="kategoriForm.durasi_menit" type="number" min="1" class="input-dark" placeholder="30" />
+      </div>
+    </div>
+
+    <div v-if="kategoriModal.err" class="mt-4 px-4 py-2.5 rounded-xl bg-rose-900/30 border border-rose-800 text-rose-300 text-sm">
+      {{ kategoriModal.err }}
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button @click="kategoriModal.show=false" class="btn btn-ghost flex-1">Batal</button>
+      <button @click="saveKategori" :disabled="kategoriModal.loading" class="btn btn-primary flex-1 py-3">
+        <span v-if="kategoriModal.loading" class="spinner"></span>
+        <span v-else>{{ kategoriModal.mode === 'add' ? 'Simpan Kategori' : 'Update Kategori' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ KONFIRMASI HAPUS ══════════════ -->
+<div v-if="confirmDel.show" class="modal-overlay" @click.self="confirmDel.show=false">
+  <div class="modal-box p-6 max-w-sm">
+    <div class="text-center mb-5">
+      <div class="text-4xl mb-3">⚠️</div>
+      <h3 class="font-bold text-white mb-1">Hapus {{ confirmDel.type === 'user' ? 'User' : confirmDel.type === 'kategori' ? 'Kategori' : 'Soal' }}?</h3>
+      <p class="text-ink-400 text-sm">
+        <strong class="text-white">{{ confirmDel.name }}</strong> akan dihapus secara permanen dan tidak bisa dikembalikan.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <button @click="confirmDel.show=false" class="btn btn-ghost flex-1">Batal</button>
+      <button @click="confirmDel.action(); confirmDel.show=false" class="btn btn-danger flex-1">Hapus Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL KUNCI SOAL ══════════════ -->
+<div v-if="lockSoalModal.show" class="modal-overlay" @click.self="lockSoalModal.show=false">
+  <div class="modal-box p-6 sm:p-7 max-w-lg">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="font-bold text-white text-base">🔒 Kunci Soal</h3>
+        <p class="text-xs text-ink-500 mt-1">Peserta: <strong>{{ lockSoalModal.pesertaNama }}</strong></p>
+        <p class="text-xs text-ink-500">Kategori: <strong>{{ lockSoalModal.kategoriNama }}</strong></p>
+      </div>
+      <button @click="lockSoalModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div v-if="lockSoalModal.loading" class="space-y-3">
+      <div v-for="i in 3" :key="i" class="h-12 bg-ink-800 rounded-lg animate-pulse"></div>
+    </div>
+
+    <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+      <div v-if="lockSoalModal.soalList.length === 0" class="text-center py-8 text-ink-500">
+        Belum ada soal untuk kategori ini.
+      </div>
+      <div v-for="soal in lockSoalModal.soalList" :key="soal.soal_id"
+           class="flex items-start justify-between gap-3 p-3 rounded-lg border transition-colors"
+           :class="soal.is_locked ? 'border-rose-700/50 bg-rose-900/15' : 'border-ink-700 bg-ink-900/50'">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">Soal #{{ soal.soal_id }}</p>
+          <p class="text-xs text-ink-400 line-clamp-2">{{ soal.teks_soal }}</p>
+        </div>
+        <button @click="soal.is_locked ? unlockSoal(soal.soal_id) : lockSoal(soal.soal_id)"
+                :disabled="lockSoalModal.locking"
+                :class="soal.is_locked ? 'btn-danger' : 'btn-success'"
+                class="btn text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">
+          <span v-if="lockSoalModal.locking === soal.soal_id" class="spinner"></span>
+          <span v-else>{{ soal.is_locked ? 'Buka 🔓' : 'Kunci 🔒' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="lockSoalModal.err" class="mt-4 px-4 py-2.5 rounded-xl bg-rose-900/30 border border-rose-800 text-rose-300 text-sm">
+      {{ lockSoalModal.err }}
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button @click="lockSoalModal.show=false" class="btn btn-primary flex-1">Selesai</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div v-if="toast.show" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[200] animate-slide-up pointer-events-none">
+  <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-xl text-sm font-semibold"
+       :class="toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-lime-600 text-ink-900'">
+    {{ toast.msg }}
+  </div>
+</div>
+
+</div><!-- end Vue app -->
+
+<script>
+const { createApp, ref, reactive, computed, onMounted } = Vue;
+const API = 'http://localhost:3000/api';
+
+createApp({
+  setup() {
+    // ── State ─────────────────────────────────────────────────────────────────
+    const page      = ref('admin');
+    const menu      = ref('users');
+    const mobileNav = ref(false);
+    const loading   = ref(false);
+    const saving    = ref(false);
+    const saveOk    = ref(false);
+    const adminName = ref('Admin');
+    const adminRole = ref('');
+    const loginErr  = ref('');
+    const loginForm = reactive({ email: '', password: '' });
+
+    const users                = ref([]);
+    const soalList             = ref([]);
+    const kategoriList         = ref([]);
+    const selectedKategoriFilter = ref('');
+    const activityList         = ref([]);
+    const loadingUsers         = ref(false);
+    const loadingSoal          = ref(false);
+    const loadingActivity      = ref(false);
+
+    const toast = reactive({ show: false, msg: '', type: 'success' });
+    let toastT = null;
+
+    const confirmDel = reactive({ show: false, type: '', name: '', action: null });
+
+    // User modal
+    const userModal = reactive({ show: false, mode: 'add', loading: false, err: '' });
+    const userForm  = reactive({ id: '', nama_lengkap: '', email: '', password: '', role: 'peserta' });
+
+    // Soal modal
+    const soalModal = reactive({ show: false, mode: 'add', loading: false, err: '' });
+    const soalForm  = reactive({
+      id: '', kategori_id: '', teks_soal: '', url_gambar: '',
+      pilihan: Array.from({ length: 5 }, () => ({ teks_pilihan: '', is_benar: false, poin: 0 }))
+    });
+
+    // Kategori modal
+    const kategoriModal = reactive({ show: false, mode: 'add', loading: false, err: '' });
+    const kategoriForm = reactive({ id: '', nama_kategori: '', durasi_menit: '' });
+
+    // Lock Soal modal
+    const lockSoalModal = reactive({
+      show: false,
+      loading: false,
+      locking: null,
+      err: '',
+      sesiId: null,
+      pesertaNama: '',
+      kategoriNama: '',
+      soalList: []
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const showToast = (msg, type = 'success', ms = 2800) => {
+      clearTimeout(toastT);
+      toast.msg = msg; toast.type = type; toast.show = true;
+      toastT = setTimeout(() => toast.show = false, ms);
+    };
+
+    const flashSave = () => {
+      saveOk.value = true;
+      setTimeout(() => saveOk.value = false, 2000);
+    };
+
+    const fmtDate = (d) => {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    };
+
+    const api = async (method, path, body) => {
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-user-role': adminRole.value,
+      };
+      const opts = { method, headers };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(API + path, opts);
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+      }
+      if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+      return data;
+    };
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    const doLogin = async () => {
+      loginErr.value = '';
+      if (!loginForm.email || !loginForm.password) { loginErr.value = 'Email dan password wajib.'; return; }
+      loading.value = true;
+      try {
+        const data = await api('POST', '/auth/login', loginForm);
+        if (data.user.role !== 'admin') { loginErr.value = 'Akun ini bukan admin.'; return; }
+        adminName.value = data.user.nama_lengkap;
+        adminRole.value = data.user.role;
+        sessionStorage.setItem('adminUser', JSON.stringify(data.user));
+        page.value = 'admin';
+        await Promise.all([loadUsers(), loadSoal(), loadKategori()]);
+      } catch (e) {
+        loginErr.value = e.message;
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const doLogout = () => {
+      sessionStorage.removeItem('adminUser');
+      sessionStorage.removeItem('user');
+      adminRole.value = '';
+      window.location.href = 'index.html';
+    };
+
+    const switchMenu = async (m) => {
+      menu.value = m;
+      mobileNav.value = false;
+      if (m === 'users' && users.value.length === 0) await loadUsers();
+      if (m === 'aktivitas' && activityList.value.length === 0) await loadAktivitas();
+      if (m === 'kategori' && kategoriList.value.length === 0) await loadKategori();
+      if (m === 'soal'  && soalList.value.length === 0) await loadSoal();
+    };
+
+    // ── Load Data ─────────────────────────────────────────────────────────────
+    const loadUsers = async () => {
+      loadingUsers.value = true;
+      try { const d = await api('GET', '/admin/users'); users.value = d.users; }
+      catch (e) { showToast('Gagal memuat user: ' + e.message, 'error'); }
+      finally { loadingUsers.value = false; }
+    };
+
+    const loadSoal = async () => {
+      loadingSoal.value = true;
+      try { const d = await api('GET', '/admin/soal'); soalList.value = d.soal; }
+      catch (e) { showToast('Gagal memuat soal: ' + e.message, 'error'); }
+      finally { loadingSoal.value = false; }
+    };
+
+    const loadAktivitas = async () => {
+      loadingActivity.value = true;
+      try {
+        const d = await api('GET', '/admin/aktivitas');
+        activityList.value = d.aktivitas;
+      } catch (e) {
+        showToast('Gagal memuat aktivitas peserta: ' + e.message, 'error');
+      } finally {
+        loadingActivity.value = false;
+      }
+    };
+
+    const loadKategori = async () => {
+      try { const d = await api('GET', '/admin/kategori'); kategoriList.value = d.kategori; }
+      catch (e) { console.warn('Gagal load kategori', e); }
+    };
+
+    const openKategoriModal = (k = null) => {
+      kategoriModal.err = '';
+      kategoriModal.mode = k ? 'edit' : 'add';
+      if (k) {
+        kategoriForm.id = k.id;
+        kategoriForm.nama_kategori = k.nama_kategori;
+        kategoriForm.durasi_menit = k.durasi_menit;
+      } else {
+        kategoriForm.id = '';
+        kategoriForm.nama_kategori = '';
+        kategoriForm.durasi_menit = '';
+      }
+      kategoriModal.show = true;
+    };
+
+    const saveKategori = async () => {
+      kategoriModal.err = '';
+      if (!kategoriForm.nama_kategori.trim()) { kategoriModal.err = 'Nama kategori wajib diisi.'; return; }
+      if (!kategoriForm.durasi_menit || Number(kategoriForm.durasi_menit) <= 0) { kategoriModal.err = 'Durasi kategori wajib lebih besar dari 0.'; return; }
+      kategoriModal.loading = true;
+      try {
+        const payload = {
+          nama_kategori: kategoriForm.nama_kategori.trim(),
+          durasi_menit: Number(kategoriForm.durasi_menit),
+        };
+        if (kategoriModal.mode === 'add') {
+          await api('POST', '/admin/kategori', payload);
+          showToast('✅ Kategori berhasil ditambahkan.');
+        } else {
+          await api('PUT', `/admin/kategori/${kategoriForm.id}`, payload);
+          showToast('✅ Kategori berhasil diperbarui.');
+        }
+        kategoriModal.show = false;
+        await loadKategori();
+      } catch (e) {
+        kategoriModal.err = e.message;
+      } finally {
+        kategoriModal.loading = false;
+      }
+    };
+
+    const deleteKategori = (k) => {
+      confirmDel.type = 'kategori';
+      confirmDel.name = k.nama_kategori;
+      confirmDel.action = async () => {
+        try {
+          await api('DELETE', `/admin/kategori/${k.id}`);
+          kategoriList.value = kategoriList.value.filter(x => x.id !== k.id);
+          showToast('🗑 Kategori dihapus.');
+        } catch (e) {
+          showToast('Gagal hapus kategori: ' + e.message, 'error');
+        }
+      };
+      confirmDel.show = true;
+    };
+
+    const filteredSoalList = computed(() => {
+      if (!selectedKategoriFilter.value) return soalList.value;
+      return soalList.value.filter((s) => String(s.kategori_id) === String(selectedKategoriFilter.value));
+    });
+
+    // ── User CRUD ─────────────────────────────────────────────────────────────
+    const openUserModal = (u = null) => {
+      userModal.err = ''; userModal.mode = u ? 'edit' : 'add';
+      if (u) { userForm.id = u.id; userForm.nama_lengkap = u.nama_lengkap; userForm.email = u.email; userForm.role = u.role; userForm.password = ''; }
+      else   { userForm.id = ''; userForm.nama_lengkap = ''; userForm.email = ''; userForm.password = ''; userForm.role = 'peserta'; }
+      userModal.show = true;
+    };
+
+    const saveUser = async () => {
+      userModal.err = '';
+      if (!userForm.nama_lengkap || !userForm.email) { userModal.err = 'Nama dan email wajib diisi.'; return; }
+      if (userModal.mode === 'add' && !userForm.password) { userModal.err = 'Password wajib untuk user baru.'; return; }
+      userModal.loading = true;
+      try {
+        if (userModal.mode === 'add') {
+          const d = await api('POST', '/admin/users', userForm);
+          users.value.unshift(d.user);
+          showToast('✅ User berhasil ditambahkan.');
+        } else {
+          const d = await api('PUT', `/admin/users/${userForm.id}`, userForm);
+          const idx = users.value.findIndex(u => u.id === userForm.id);
+          if (idx !== -1) users.value.splice(idx, 1, d.user);
+          showToast('✅ User berhasil diupdate.');
+        }
+        userModal.show = false;
+        flashSave();
+      } catch (e) { userModal.err = e.message; }
+      finally { userModal.loading = false; }
+    };
+
+    const deleteUser = (u) => {
+      confirmDel.type = 'user'; confirmDel.name = u.nama_lengkap;
+      confirmDel.action = async () => {
+        try {
+          await api('DELETE', `/admin/users/${u.id}`);
+          users.value = users.value.filter(x => x.id !== u.id);
+          showToast('🗑 User dihapus.');
+        } catch (e) { showToast('Gagal hapus: ' + e.message, 'error'); }
+      };
+      confirmDel.show = true;
+    };
+
+    // ── Soal CRUD ─────────────────────────────────────────────────────────────
+    const resetSoalForm = () => {
+      soalForm.id = ''; soalForm.kategori_id = ''; soalForm.teks_soal = ''; soalForm.url_gambar = '';
+      soalForm.pilihan = Array.from({ length: 5 }, () => ({ teks_pilihan: '', is_benar: false, poin: 0 }));
+    };
+
+    const openSoalModal = (s = null) => {
+      soalModal.err = ''; soalModal.mode = s ? 'edit' : 'add';
+      if (s) {
+        soalForm.id         = s.id;
+        soalForm.kategori_id = s.kategori_id;
+        soalForm.teks_soal  = s.teks_soal;
+        soalForm.url_gambar = s.url_gambar || '';
+        // Isi pilihan yang ada, sisa dipadding
+        soalForm.pilihan = Array.from({ length: 5 }, (_, i) => {
+          const p = s.pilihan[i];
+          return p ? { teks_pilihan: p.teks_pilihan, is_benar: p.is_benar, poin: p.poin }
+                   : { teks_pilihan: '', is_benar: false, poin: 0 };
+        });
+      } else {
+        resetSoalForm();
+      }
+      soalModal.show = true;
+    };
+
+    // Hanya satu is_benar boleh aktif
+    const onBenarChange = (idx) => {
+      if (soalForm.pilihan[idx].is_benar) {
+        soalForm.pilihan.forEach((p, i) => { if (i !== idx) p.is_benar = false; });
+      }
+    };
+
+    // Konversi gambar ke Base64
+    const handleImageUpload = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { showToast('Gambar terlalu besar (maks 2MB).', 'error'); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => { soalForm.url_gambar = ev.target.result; };
+      reader.readAsDataURL(file);
+    };
+
+    const saveSoal = async () => {
+      soalModal.err = '';
+      if (!soalForm.kategori_id) { soalModal.err = 'Pilih kategori terlebih dahulu.'; return; }
+      if (!soalForm.teks_soal.trim()) { soalModal.err = 'Teks soal wajib diisi.'; return; }
+      const pilihanBerisi = soalForm.pilihan.filter(p => p.teks_pilihan.trim());
+      if (pilihanBerisi.length < 2) { soalModal.err = 'Minimal 2 opsi jawaban harus diisi.'; return; }
+
+      soalModal.loading = true;
+      try {
+        const payload = {
+          teks_soal:      soalForm.teks_soal.trim(),
+          kategori_id:    soalForm.kategori_id,
+          url_gambar:     soalForm.url_gambar || null,
+          pilihan_jawaban: pilihanBerisi.map(p => ({
+            teks_pilihan: p.teks_pilihan.trim(),
+            is_benar:     p.is_benar,
+            poin:         Number(p.poin) || 0,
+          })),
+        };
+
+        if (soalModal.mode === 'add') {
+          await api('POST', '/admin/soal', payload);
+          showToast('✅ Soal berhasil ditambahkan.');
+        } else {
+          await api('PUT', `/admin/soal/${soalForm.id}`, payload);
+          showToast('✅ Soal berhasil diupdate.');
+        }
+        soalModal.show = false;
+        flashSave();
+        await loadSoal(); // refresh list
+      } catch (e) { soalModal.err = e.message; }
+      finally { soalModal.loading = false; }
+    };
+
+    const deleteSoal = (s) => {
+      confirmDel.type = 'soal'; confirmDel.name = s.teks_soal.substring(0, 60) + '...';
+      confirmDel.action = async () => {
+        try {
+          await api('DELETE', `/admin/soal/${s.id}`);
+          soalList.value = soalList.value.filter(x => x.id !== s.id);
+          showToast('🗑 Soal dihapus.');
+        } catch (e) { showToast('Gagal hapus: ' + e.message, 'error'); }
+      };
+      confirmDel.show = true;
+    };
+
+    const reopenSession = async (sesiId) => {
+      try {
+        await api('POST', `/admin/sesi/${sesiId}/reopen`);
+        showToast('✅ Sesi peserta berhasil dibuka ulang.');
+        await loadAktivitas();
+      } catch (e) {
+        showToast('Gagal membuka ulang sesi: ' + e.message, 'error');
+      }
+    };
+
+    const openLockSoalModal = async (sesiId, pesertaNama, kategoriNama) => {
+      lockSoalModal.sesiId = sesiId;
+      lockSoalModal.pesertaNama = pesertaNama;
+      lockSoalModal.kategoriNama = kategoriNama;
+      lockSoalModal.show = true;
+      lockSoalModal.err = '';
+      lockSoalModal.loading = true;
+      await loadSoalList(sesiId);
+    };
+
+    const loadSoalList = async (sesiId) => {
+      try {
+        const d = await api('GET', `/admin/sesi/${sesiId}/soal`);
+        lockSoalModal.soalList = d.soal || [];
+      } catch (e) {
+        lockSoalModal.err = 'Gagal memuat soal: ' + e.message;
+        lockSoalModal.soalList = [];
+      } finally {
+        lockSoalModal.loading = false;
+      }
+    };
+
+    const lockSoal = async (soalId) => {
+      lockSoalModal.locking = soalId;
+      try {
+        await api('POST', `/admin/sesi/${lockSoalModal.sesiId}/soal/${soalId}/lock`);
+        const soal = lockSoalModal.soalList.find(s => s.soal_id === soalId);
+        if (soal) soal.is_locked = true;
+        showToast('✅ Soal berhasil dikunci.');
+      } catch (e) {
+        showToast('Gagal mengunci soal: ' + e.message, 'error');
+      } finally {
+        lockSoalModal.locking = null;
+      }
+    };
+
+    const unlockSoal = async (soalId) => {
+      lockSoalModal.locking = soalId;
+      try {
+        await api('DELETE', `/admin/sesi/${lockSoalModal.sesiId}/soal/${soalId}/lock`);
+        const soal = lockSoalModal.soalList.find(s => s.soal_id === soalId);
+        if (soal) soal.is_locked = false;
+        showToast('✅ Soal berhasil dibuka.');
+      } catch (e) {
+        showToast('Gagal membuka soal: ' + e.message, 'error');
+      } finally {
+        lockSoalModal.locking = null;
+      }
+    };
+
+    // ── Session Restore ───────────────────────────────────────────────────────
+    onMounted(async () => {
+      const saved = sessionStorage.getItem('adminUser');
+      if (!saved) {
+        window.location.href = 'index.html';
+        return;
+      }
+      try {
+        const u = JSON.parse(saved);
+        if (u.role !== 'admin') {
+          sessionStorage.removeItem('adminUser');
+          window.location.href = 'index.html';
+          return;
+        }
+        adminName.value = u.nama_lengkap;
+        adminRole.value = u.role;
+        page.value = 'admin';
+        await Promise.all([loadUsers(), loadSoal(), loadKategori()]);
+      } catch {
+        sessionStorage.removeItem('adminUser');
+        window.location.href = 'index.html';
+      }
+    });
+
+    return {
+      page, menu, mobileNav, loading, saving, saveOk, adminName, loginErr, loginForm,
+      users, soalList, kategoriList, activityList, loadingUsers, loadingSoal, loadingActivity,
+      toast, confirmDel,
+      userModal, userForm,
+      soalModal, soalForm,
+      doLogin, doLogout, switchMenu, fmtDate,
+      openUserModal, saveUser, deleteUser,
+      openSoalModal, saveSoal, deleteSoal, onBenarChange, handleImageUpload,
+      selectedKategoriFilter, filteredSoalList, reopenSession,
+      kategoriModal, kategoriForm, openKategoriModal, saveKategori, deleteKategori,
+      lockSoalModal, openLockSoalModal, lockSoal, unlockSoal,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

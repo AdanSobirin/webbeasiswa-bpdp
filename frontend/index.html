@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Simulasi Psikotes — Beasiswa Sawit</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], serif: ['DM Serif Display', 'serif'] },
+      colors: {
+        sawit: { 50:'#f0fdf0',100:'#dcfcdc',200:'#b9f6b9',300:'#86ee86',400:'#4ade4a',500:'#22c322',600:'#16a016',700:'#137e13',800:'#136413',900:'#115211',950:'#042d04' },
+        forest:{ 50:'#f2f7f0',100:'#e2f0de',200:'#c5e1be',300:'#9ccb91',400:'#6daf5e',500:'#4a9239',600:'#387029',700:'#2c5820',800:'#254a1b',900:'#1f3d17' },
+        earth: { 50:'#fdf8f0',100:'#fbefd8',200:'#f5d9a8',300:'#edbd70',400:'#e49d3c',500:'#d8831e',600:'#c16816',700:'#9c5014',800:'#7e4116',900:'#683615' },
+      },
+      animation: {
+        'fade-in':    'fadeIn 0.4s ease-out',
+        'slide-up':   'slideUp 0.35s cubic-bezier(0.16,1,0.3,1)',
+        'slide-in':   'slideIn 0.3s cubic-bezier(0.16,1,0.3,1)',
+        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+        'spin-slow':  'spin 3s linear infinite',
+      },
+      keyframes: {
+        fadeIn:     { from:{ opacity:'0' }, to:{ opacity:'1' } },
+        slideUp:    { from:{ opacity:'0', transform:'translateY(16px)' }, to:{ opacity:'1', transform:'translateY(0)' } },
+        slideIn:    { from:{ opacity:'0', transform:'translateX(-16px)' }, to:{ opacity:'1', transform:'translateX(0)' } },
+        pulseSoft:  { '0%,100%':{ opacity:'1' }, '50%':{ opacity:'0.6' } },
+      },
+    }
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fdf6;color:#1a2e1a;-webkit-tap-highlight-color:transparent}
+.btn-choice{transition:all .18s cubic-bezier(.4,0,.2,1)}
+.btn-choice:active{transform:scale(.97)}
+.drawer-overlay{backdrop-filter:blur(2px)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#b9f6b9;border-radius:9px}
+.soal-img{max-height:220px;object-fit:contain;border-radius:12px;border:1.5px solid #e2f0de}
+.timer-critical{animation:timerPulse .7s ease-in-out infinite}
+@keyframes timerPulse{0%,100%{background:#fee2e2;color:#b91c1c}50%{background:#fecaca;color:#991b1b}}
+.no-soal-btn{min-width:36px;min-height:36px;font-size:.72rem;font-weight:600;border-radius:8px;transition:all .15s;cursor:pointer;border:1.5px solid transparent}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ROOT LAYOUT
+═══════════════════════════════════════════════════════════════════════════ -->
+<div class="min-h-screen">
+
+  <!-- ── HALAMAN LOGIN ──────────────────────────────────────────────────── -->
+  <div v-if="halaman === 'login'" class="min-h-screen flex items-center justify-center px-4 py-12"
+       style="background:linear-gradient(135deg,#f0fdf0 0%,#dcfcdc 40%,#fdf8f0 100%)">
+    <!-- Dekorasi latar -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-20"
+           style="background:radial-gradient(circle,#22c322,transparent)"></div>
+      <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full opacity-15"
+           style="background:radial-gradient(circle,#4a9239,transparent)"></div>
+    </div>
+
+    <div class="relative w-full max-w-md animate-fade-in">
+      <!-- Logo & Brand -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 shadow-lg overflow-hidden bg-white">
+          <img src="./assets/logo-web.jpg" alt="Logo Beasiswa" class="w-full h-full object-contain" />
+        </div>
+        <h1 class="font-serif text-3xl text-forest-800" style="letter-spacing:-.5px">Beasiswa Sawit</h1>
+        <p class="text-forest-500 text-sm mt-1 font-medium">Simulasi Psikotes Online</p>
+      </div>
+
+      <!-- Card Login / Register -->
+      <div class="bg-white rounded-2xl shadow-xl p-8 border border-sawit-100">
+        <div class="flex items-center justify-between mb-6 gap-3">
+          <h2 class="font-bold text-xl text-forest-900">
+            {{ authMode === 'login' ? 'Masuk ke Akun' : 'Daftar Peserta' }}
+          </h2>
+          <div class="inline-flex rounded-full bg-sawit-50 border border-sawit-100 p-1">
+            <button type="button" @click="switchAuthMode('login')"
+                    :class="authMode === 'login' ? 'bg-forest-700 text-white' : 'text-forest-600 hover:text-forest-800'"
+                    class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all">
+              Masuk
+            </button>
+            <button type="button" @click="switchAuthMode('register')"
+                    :class="authMode === 'register' ? 'bg-forest-700 text-white' : 'text-forest-600 hover:text-forest-800'"
+                    class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all">
+              Daftar
+            </button>
+          </div>
+        </div>
+
+        <div v-if="authMode === 'login'">
+          <div v-if="loginError" class="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-slide-up flex items-start gap-2">
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/></svg>
+            <span>{{ loginError }}</span>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Email</label>
+              <input v-model="loginForm.email" type="email" placeholder="email@contoh.com"
+                     @keyup.enter="doLogin"
+                     class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300"
+                     :disabled="loading" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Password</label>
+              <div class="relative">
+                <input v-model="loginForm.password" :type="showPwd ? 'text' : 'password'" placeholder="••••••••"
+                       @keyup.enter="doLogin"
+                       class="w-full px-4 py-3 pr-11 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300"
+                       :disabled="loading" />
+                <button @click="showPwd=!showPwd" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-forest-400 hover:text-forest-600 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path v-if="!showPwd" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    <path v-else d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button @click="doLogin" :disabled="loading"
+                  class="mt-6 w-full py-3.5 rounded-xl font-bold text-white text-sm tracking-wide transition-all shadow-md active:scale-95"
+                  :class="loading ? 'opacity-70 cursor-not-allowed bg-sawit-500' : 'bg-gradient-to-r from-forest-700 to-sawit-600 hover:from-forest-600 hover:to-sawit-500 hover:shadow-lg'">
+            <span v-if="loading" class="flex items-center justify-center gap-2">
+              <svg class="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              Memproses...
+            </span>
+            <span v-else>Masuk ke Sistem</span>
+          </button>
+        </div>
+
+        <div v-else>
+          <div v-if="registerError" class="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm animate-slide-up flex items-start gap-2">
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/></svg>
+            <span>{{ registerError }}</span>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Nama Lengkap</label>
+              <input v-model="registerForm.nama_lengkap" type="text" placeholder="Nama lengkap"
+                     class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Email</label>
+              <input v-model="registerForm.email" type="email" placeholder="email@contoh.com"
+                     class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Password</label>
+              <input v-model="registerForm.password" type="password" placeholder="••••••••"
+                     class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Konfirmasi Password</label>
+              <input v-model="registerForm.password_confirm" type="password" placeholder="••••••••"
+                     class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-sawit-50 focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all placeholder-forest-300" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-forest-700 mb-1.5">Jawab Pertanyaan Keamanan</label>
+              <div class="rounded-xl border border-sawit-200 bg-sawit-50 p-4 text-sm text-forest-700">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                  <p class="font-medium">{{ captchaQuestion.question || 'Memuat pertanyaan...' }}</p>
+                  <button type="button" @click="refreshCaptcha"
+                          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-sawit-200 bg-white text-forest-700 text-xs font-semibold hover:bg-sawit-50 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M5.64 15.64A7.5 7.5 0 0112 4.5c4.142 0 7.5 3.358 7.5 7.5a7.5 7.5 0 01-7.5 7.5 7.49 7.49 0 01-5.36-2.22"/></svg>
+                    Refresh
+                  </button>
+                </div>
+                <input v-model="registerForm.captcha_answer" type="text" placeholder="Jawaban"
+                       class="w-full px-4 py-3 rounded-xl border border-sawit-200 bg-white focus:outline-none focus:ring-2 focus:ring-sawit-400 focus:border-transparent text-sm transition-all" />
+              </div>
+            </div>
+            <input v-model="registerForm.website" type="text" autocomplete="off" tabindex="-1" class="hidden" />
+          </div>
+
+          <button @click="doRegister" :disabled="registerLoading"
+                  class="mt-6 w-full py-3.5 rounded-xl font-bold text-white text-sm tracking-wide transition-all shadow-md active:scale-95"
+                  :class="registerLoading ? 'opacity-70 cursor-not-allowed bg-sawit-500' : 'bg-gradient-to-r from-forest-700 to-sawit-600 hover:from-forest-600 hover:to-sawit-500 hover:shadow-lg'">
+            <span v-if="registerLoading" class="flex items-center justify-center gap-2">
+              <svg class="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              Memproses...
+            </span>
+            <span v-else>Daftar Sekarang</span>
+          </button>
+
+          <div class="mt-4 text-center text-sm text-forest-500">
+            Sudah punya akun?
+            <button type="button" @click="switchAuthMode('login')" class="font-semibold text-forest-700 hover:text-forest-900">Masuk di sini</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-forest-400 mt-6">Simulasi Psikotes Beasiswa Sawit &copy; 2024</p>
+    </div>
+  </div>
+
+  <!-- ── HALAMAN DASHBOARD ──────────────────────────────────────────────── -->
+  <div v-else-if="halaman === 'dashboard'" class="min-h-screen" style="background:linear-gradient(160deg,#f0fdf0 0%,#f8fdf6 60%)">
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-sawit-100 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center flex-shrink-0">
+            <img src="./assets/logo-web.jpg" alt="Logo Beasiswa" class="w-full h-full object-contain" />
+          </div>
+          <span class="font-serif text-lg text-forest-800">Beasiswa Sawit</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="hidden sm:block text-sm text-forest-600 font-medium">{{ user.nama_lengkap }}</span>
+          <button @click="doLogout" class="text-xs px-3 py-1.5 rounded-lg border border-forest-200 text-forest-600 hover:bg-forest-50 transition-colors font-medium">Keluar</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <!-- Welcome Banner -->
+      <div class="rounded-2xl p-6 sm:p-8 mb-8 animate-fade-in overflow-hidden relative"
+           style="background:linear-gradient(135deg,#137e13 0%,#22c322 60%,#4ade4a 100%)">
+        <div class="absolute right-0 top-0 w-48 h-48 opacity-10">
+          <svg viewBox="0 0 200 200" fill="white"><circle cx="100" cy="100" r="80"/></svg>
+        </div>
+        <div class="absolute right-8 bottom-0 w-32 h-32 opacity-10">
+          <svg viewBox="0 0 200 200" fill="white"><polygon points="100,0 200,173 0,173"/></svg>
+        </div>
+        <p class="text-sawit-100 text-sm font-semibold mb-1">Selamat Datang,</p>
+        <h2 class="font-serif text-2xl sm:text-3xl text-white mb-2">{{ user.nama_lengkap }} 👋</h2>
+        <p class="text-sawit-100 text-sm">Pilih sub-tes di bawah ini untuk memulai simulasi psikotes Anda.</p>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 mb-6">
+        <p class="text-sm text-forest-600">Dashboard peserta</p>
+        <button @click="loadDashboard" :disabled="loadingDashboard"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-sawit-200 bg-white text-forest-700 text-sm font-semibold hover:bg-sawit-50 transition-colors"
+                :class="loadingDashboard ? 'opacity-70 cursor-not-allowed' : ''">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4.05 11a8 8 0 0113.9-5.65M19.95 13a8 8 0 01-13.9 5.65M4.05 11H1m22 2h-3.05"/></svg>
+          Refresh Dashboard
+        </button>
+      </div>
+      <!-- Loading skeleton -->
+      <div v-if="loadingDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="i in 6" :key="i" class="bg-white rounded-2xl p-6 animate-pulse border border-sawit-100">
+          <div class="h-4 bg-sawit-100 rounded w-2/3 mb-3"></div>
+          <div class="h-3 bg-sawit-50 rounded w-1/3 mb-6"></div>
+          <div class="h-10 bg-sawit-100 rounded-xl w-full"></div>
+        </div>
+      </div>
+
+      <!-- Kategori Grid -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="(kat, i) in kategoriList" :key="kat.id"
+             class="bg-white rounded-2xl p-6 border border-sawit-100 shadow-sm hover:shadow-md transition-all animate-slide-up"
+             :style="`animation-delay:${i * 60}ms`">
+          <!-- Icon + Nama -->
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                 :class="badgeColor(kat.status_sesi)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-forest-900 text-sm leading-tight">{{ kat.nama_kategori }}</h3>
+              <p class="text-forest-400 text-xs mt-0.5">⏱ {{ kat.durasi_menit }} menit</p>
+            </div>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="mb-4">
+            <span v-if="kat.status_sesi === 'selesai'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sawit-100 text-forest-700">
+              ✅ Skor: {{ kat.skor_akhir ?? '-' }}
+            </span>
+            <span v-else-if="kat.status_sesi === 'berjalan'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 animate-pulse-soft">
+              🔄 Sedang Berlangsung
+            </span>
+            <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-forest-50 text-forest-500">
+              ○ Belum Dimulai
+            </span>
+          </div>
+
+          <!-- Tombol Aksi -->
+          <button v-if="kat.status_sesi !== 'selesai'" @click="mulaiUjian(kat)"
+                  :disabled="loadingMulai === kat.id"
+                  class="w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-sm"
+                  :class="kat.status_sesi === 'berjalan'
+                    ? 'bg-amber-400 hover:bg-amber-300 text-amber-900'
+                    : 'text-white bg-gradient-to-r from-forest-700 to-sawit-600 hover:from-forest-600 hover:to-sawit-500'">
+            <span v-if="loadingMulai === kat.id" class="flex items-center justify-center gap-2">
+              <svg class="w-3.5 h-3.5 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              Memuat...
+            </span>
+            <span v-else>{{ kat.status_sesi === 'berjalan' ? '▶ Lanjutkan' : '▶ Mulai Tes' }}</span>
+          </button>
+          <div v-else class="w-full py-2.5 rounded-xl text-sm font-bold text-center bg-sawit-50 text-forest-500 border border-sawit-200">
+            ✓ Selesai
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── HALAMAN UJIAN ───────────────────────────────────────────────────── -->
+  <div v-else-if="halaman === 'ujian'" class="min-h-screen flex flex-col" style="background:#f8fdf6">
+
+    <!-- Header Ujian -->
+    <header class="bg-white border-b border-sawit-100 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <!-- Tombol drawer (HP) -->
+          <button @click="drawerOpen=!drawerOpen" class="sm:hidden flex-shrink-0 p-1.5 rounded-lg hover:bg-sawit-50 transition-colors">
+            <svg class="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <span class="font-bold text-forest-800 text-sm truncate">{{ sesi.nama_kategori }}</span>
+        </div>
+
+        <!-- Timer -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold"
+               :class="timerKritis ? 'timer-critical' : 'bg-forest-50 text-forest-700'">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ formatTimer }}
+          </div>
+          <!-- Tombol Selesai -->
+          <button @click="konfirmasiSelesai" class="hidden sm:block px-3 py-1.5 rounded-xl text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors">
+            Selesai Ujian
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Progress bar -->
+    <div class="h-1 bg-sawit-100">
+      <div class="h-1 bg-gradient-to-r from-forest-600 to-sawit-500 transition-all duration-500"
+           :style="`width:${(jumlahTerjawab/soalList.length)*100}%`"></div>
+    </div>
+
+    <!-- Body Ujian (2-col desktop) -->
+    <div class="flex-1 max-w-7xl mx-auto w-full px-4 py-5 flex gap-6">
+
+      <!-- Kolom Kiri: Soal + Pilihan -->
+      <div class="flex-1 min-w-0 animate-fade-in">
+
+        <!-- Nomor & progress -->
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-semibold text-forest-500 bg-sawit-50 px-3 py-1 rounded-full border border-sawit-200">
+            Soal {{ soalAktifIdx + 1 }} / {{ soalList.length }}
+          </span>
+          <span class="text-xs text-forest-400">{{ jumlahTerjawab }} terjawab</span>
+        </div>
+
+        <!-- Teks Soal -->
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-sawit-100 shadow-sm mb-4">
+          <p class="text-forest-900 text-base leading-relaxed font-medium" v-html="renderSoalText(soalAktif.teks_soal)"></p>
+          <img v-if="soalAktif.url_gambar" :src="soalAktif.url_gambar" alt="Gambar soal" class="soal-img mt-4 mx-auto block" />
+        </div>
+
+        <!-- Pilihan Jawaban -->
+        <div class="space-y-2.5 mb-6">
+          <button v-for="(pilihan, pi) in soalAktif.pilihan" :key="pilihan.id"
+                  @click="pilihJawaban(pilihan)"
+                  :disabled="ujianSelesai"
+                  class="btn-choice w-full text-left px-4 sm:px-5 py-4 rounded-xl border-2 text-sm font-medium flex items-start gap-3 transition-all"
+                  :class="[
+                    jawaban[soalAktif.soal_id] === pilihan.id
+                      ? 'border-sawit-500 bg-sawit-50 text-forest-800 shadow-sm'
+                      : 'border-sawit-100 bg-white hover:border-sawit-300 hover:bg-sawit-50 text-forest-700',
+                    ujianSelesai ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                  ]"
+                  style="min-height:52px">
+            <span class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5"
+                  :class="jawaban[soalAktif.soal_id] === pilihan.id
+                    ? 'bg-sawit-500 text-white'
+                    : 'bg-sawit-100 text-forest-600'">
+              {{ String.fromCharCode(65 + pi) }}
+            </span>
+            <span class="leading-snug pt-0.5">{{ pilihan.teks_pilihan }}</span>
+          </button>
+        </div>
+
+        <!-- Nav Prev / Next -->
+        <div class="flex gap-3">
+          <button @click="naviSoal(-1)" :disabled="soalAktifIdx === 0"
+                  class="flex-1 py-3 rounded-xl border-2 border-sawit-200 text-sm font-semibold text-forest-600 hover:bg-sawit-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+            ← Sebelumnya
+          </button>
+          <button v-if="soalAktifIdx < soalList.length - 1" @click="naviSoal(1)"
+                  class="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+                  style="background:linear-gradient(to right,#137e13,#22c322)">
+            Berikutnya →
+          </button>
+          <button v-else @click="konfirmasiSelesai"
+                  class="flex-1 py-3 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition-all active:scale-95">
+            Selesai Ujian ✓
+          </button>
+        </div>
+      </div>
+
+      <!-- Kolom Kanan: Timer + Grid Nomor (Desktop) -->
+      <div class="hidden lg:flex flex-col gap-4 w-60 flex-shrink-0">
+        <!-- Info Sesi -->
+        <div class="bg-white rounded-2xl p-4 border border-sawit-100 shadow-sm text-center">
+          <p class="text-xs text-forest-400 font-medium mb-1">Waktu Tersisa</p>
+          <p class="text-3xl font-bold tracking-tight" :class="timerKritis ? 'text-red-600' : 'text-forest-800'">{{ formatTimer }}</p>
+          <p class="text-xs text-forest-400 mt-1">{{ jumlahTerjawab }} / {{ soalList.length }} terjawab</p>
+          <div class="mt-2 h-1.5 bg-sawit-100 rounded-full overflow-hidden">
+            <div class="h-full bg-sawit-500 rounded-full transition-all" :style="`width:${(jumlahTerjawab/soalList.length)*100}%`"></div>
+          </div>
+        </div>
+
+        <!-- Grid Nomor Soal -->
+        <div class="bg-white rounded-2xl p-4 border border-sawit-100 shadow-sm flex-1">
+          <p class="text-xs font-semibold text-forest-500 mb-3">Navigasi Soal</p>
+          <div class="grid grid-cols-5 gap-1.5">
+            <button v-for="(s, i) in soalList" :key="s.soal_id" @click="soalAktifIdx=i"
+                    class="no-soal-btn"
+                    :class="[
+                      i === soalAktifIdx
+                        ? 'bg-forest-700 text-white border-forest-700'
+                        : jawaban[s.soal_id]
+                          ? 'bg-sawit-500 text-white border-sawit-500'
+                          : 'bg-sawit-50 text-forest-600 border-sawit-200 hover:bg-sawit-100'
+                    ]">
+              {{ i + 1 }}
+            </button>
+          </div>
+          <div class="mt-3 space-y-1.5">
+            <div class="flex items-center gap-2 text-xs text-forest-400">
+              <span class="w-3.5 h-3.5 rounded bg-sawit-500 flex-shrink-0"></span> Sudah dijawab
+            </div>
+            <div class="flex items-center gap-2 text-xs text-forest-400">
+              <span class="w-3.5 h-3.5 rounded bg-forest-700 flex-shrink-0"></span> Soal aktif
+            </div>
+            <div class="flex items-center gap-2 text-xs text-forest-400">
+              <span class="w-3.5 h-3.5 rounded bg-sawit-50 border border-sawit-200 flex-shrink-0"></span> Belum dijawab
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Selesai Desktop -->
+        <button @click="konfirmasiSelesai"
+                class="w-full py-3 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition-all active:scale-95 shadow">
+           Selesai Ujian
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Nomor Soal (Mobile) -->
+    <div v-if="drawerOpen" class="fixed inset-0 z-50 flex" @click.self="drawerOpen=false">
+      <div class="drawer-overlay absolute inset-0 bg-black/30" @click="drawerOpen=false"></div>
+      <div class="relative bg-white w-72 max-w-[85vw] h-full flex flex-col shadow-2xl animate-slide-in">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-sawit-100">
+          <h3 class="font-bold text-forest-800">Navigasi Soal</h3>
+          <button @click="drawerOpen=false" class="p-1 rounded-lg hover:bg-sawit-50 text-forest-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+          <p class="text-xs text-forest-400 mb-3">{{ jumlahTerjawab }} / {{ soalList.length }} terjawab</p>
+          <div class="grid grid-cols-5 gap-2">
+            <button v-for="(s, i) in soalList" :key="s.soal_id"
+                    @click="soalAktifIdx=i; drawerOpen=false"
+                    class="no-soal-btn w-full aspect-square"
+                    :class="[
+                      i === soalAktifIdx
+                        ? 'bg-forest-700 text-white border-forest-700'
+                        : jawaban[s.soal_id]
+                          ? 'bg-sawit-500 text-white border-sawit-500'
+                          : 'bg-sawit-50 text-forest-600 border-sawit-200'
+                    ]">
+              {{ i + 1 }}
+            </button>
+          </div>
+          <div class="mt-5 space-y-2">
+            <div class="flex items-center gap-2 text-xs text-forest-400"><span class="w-4 h-4 rounded bg-sawit-500 flex-shrink-0"></span>Sudah dijawab</div>
+            <div class="flex items-center gap-2 text-xs text-forest-400"><span class="w-4 h-4 rounded bg-forest-700 flex-shrink-0"></span>Soal aktif</div>
+            <div class="flex items-center gap-2 text-xs text-forest-400"><span class="w-4 h-4 rounded bg-sawit-50 border border-sawit-200 flex-shrink-0"></span>Belum dijawab</div>
+          </div>
+        </div>
+        <div class="px-5 py-4 border-t border-sawit-100">
+          <button @click="konfirmasiSelesai" class="w-full py-3 rounded-xl text-sm font-bold bg-red-600 text-white">
+             Selesai Ujian
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HALAMAN HASIL ──────────────────────────────────────────────────── -->
+  <div v-else-if="halaman === 'hasil'" class="min-h-screen flex items-center justify-center px-4 py-12"
+       style="background:linear-gradient(135deg,#f0fdf0,#fdf8f0)">
+    <div class="w-full max-w-md animate-slide-up">
+      <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-10 border border-sawit-100 text-center">
+        <div class="text-6xl mb-4">🎉</div>
+        <h2 class="font-serif text-2xl text-forest-800 mb-1">Ujian Selesai!</h2>
+        <p class="text-forest-500 text-sm mb-8">Hasil simulasi psikotes Anda</p>
+
+        <div class="bg-gradient-to-br from-sawit-50 to-forest-50 rounded-2xl p-6 mb-6 border border-sawit-200">
+          <p class="text-xs font-semibold text-forest-500 mb-1 uppercase tracking-wider">Total Skor</p>
+          <p class="text-5xl font-black text-forest-800 mb-1">{{ hasil.skor_akhir }}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-8">
+          <div class="rounded-xl bg-sawit-50 p-4 border border-sawit-100">
+            <p class="text-2xl font-bold text-forest-800">{{ hasil.total_dijawab }}</p>
+            <p class="text-xs text-forest-500 mt-0.5">Soal Dijawab</p>
+          </div>
+          <div class="rounded-xl bg-sawit-50 p-4 border border-sawit-100">
+            <p class="text-2xl font-bold text-forest-800">{{ hasil.total_soal - hasil.total_dijawab }}</p>
+            <p class="text-xs text-forest-500 mt-0.5">Tidak Dijawab</p>
+          </div>
+        </div>
+
+        <button @click="keDashboard"
+                class="w-full py-3.5 rounded-xl font-bold text-white text-sm shadow-md active:scale-95"
+                style="background:linear-gradient(to right,#137e13,#22c322)">
+          ← Kembali ke Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end root -->
+
+<!-- ── MODAL KONFIRMASI SELESAI ────────────────────────────────────────── -->
+<div v-if="showModal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showModal=false"></div>
+  <div class="relative bg-white rounded-2xl p-6 w-full max-w-sm animate-slide-up shadow-2xl">
+    <div class="text-center mb-5">
+      <div class="text-4xl mb-3">⚠️</div>
+      <h3 class="font-bold text-forest-900 text-lg mb-1">Selesaikan Ujian?</h3>
+      <p class="text-forest-500 text-sm">
+        Anda baru menjawab <strong class="text-forest-800">{{ jumlahTerjawab }}</strong> dari
+        <strong class="text-forest-800">{{ soalList.length }}</strong> soal.
+        Soal yang belum dijawab akan dihitung <strong class="text-red-600">0 poin</strong>.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <button @click="showModal=false"
+              class="flex-1 py-3 rounded-xl border-2 border-sawit-200 text-sm font-bold text-forest-600 hover:bg-sawit-50 transition-colors">
+        Lanjut Mengerjakan
+      </button>
+      <button @click="doSelesai" :disabled="loadingSelesai"
+              class="flex-1 py-3 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition-all active:scale-95">
+        <span v-if="loadingSelesai" class="flex items-center justify-center gap-1">
+          <svg class="w-3.5 h-3.5 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          Proses...
+        </span>
+        <span v-else>Ya, Selesai</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST NOTIFIKASI ────────────────────────────────────────────────── -->
+<div v-if="toast.show" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] animate-slide-up pointer-events-none">
+  <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-semibold"
+       :class="toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-forest-800 text-white'">
+    <svg v-if="toast.type !== 'error'" class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+    {{ toast.msg }}
+  </div>
+</div>
+
+</div><!-- end Vue app -->
+
+<script>
+const { createApp, ref, reactive, computed, watch, onMounted, onUnmounted } = Vue;
+
+// Ubah URL ini sesuai alamat backend Anda
+const API_BASE = 'http://localhost:3000/api';
+const API_HOST = API_BASE.replace('/api', '');
+
+createApp({
+  setup() {
+    // ── State utama ──────────────────────────────────────────────────────────
+    const halaman       = ref('login');   // login | dashboard | ujian | hasil
+    const loading       = ref(false);
+    const loginError    = ref('');
+    const showPwd       = ref(false);
+    const authMode      = ref('login');
+    const loginForm     = reactive({ email: '', password: '' });
+    const registerError = ref('');
+    const registerLoading = ref(false);
+    const registerForm  = reactive({
+      nama_lengkap: '',
+      email: '',
+      password: '',
+      password_confirm: '',
+      captcha_answer: '',
+      captcha_id: '',
+      website: '',
+    });
+    const captchaQuestion = ref({ id: '', question: '' });
+
+    const user          = reactive({ id:'', nama_lengkap:'', email:'', role:'' });
+    const kategoriList  = ref([]);
+    const loadingDashboard = ref(false);
+    const loadingMulai  = ref(null);
+
+    // Ujian
+    const sesi          = reactive({ id:'', nama_kategori:'', waktu_habis:'' });
+    const soalList      = ref([]);
+    const soalAktifIdx  = ref(0);
+    const jawaban       = reactive({});         // { soal_id: pilihan_id }
+    const drawerOpen    = ref(false);
+    const showModal     = ref(false);
+    const loadingSelesai = ref(false);
+    const ujianSelesai  = ref(false);
+    const timerSisa     = ref(0);               // detik
+    let   timerInterval = null;
+
+    // Hasil
+    const hasil = reactive({ skor_akhir:0, total_soal:0, total_dijawab:0 });
+
+    // Toast
+    const toast = reactive({ show:false, msg:'', type:'success' });
+    let   toastTimeout = null;
+
+    // ── Computed ─────────────────────────────────────────────────────────────
+    const soalAktif = computed(() => soalList.value[soalAktifIdx.value] || {});
+
+    const jumlahTerjawab = computed(() =>
+      soalList.value.filter(s => jawaban[s.soal_id]).length
+    );
+
+    const formatTimer = computed(() => {
+      const m = Math.floor(Math.max(timerSisa.value, 0) / 60);
+      const s = Math.max(timerSisa.value, 0) % 60;
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    });
+
+    const timerKritis = computed(() => timerSisa.value <= 60 && timerSisa.value > 0);
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const showToast = (msg, type = 'success', ms = 2500) => {
+      clearTimeout(toastTimeout);
+      toast.msg = msg; toast.type = type; toast.show = true;
+      toastTimeout = setTimeout(() => { toast.show = false; }, ms);
+    };
+
+    const escapeHtml = (value) => {
+      if (!value) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+
+    const renderSoalText = (text) => {
+      const safe = escapeHtml(text);
+      return safe.replace(/\\n/g, '<br/>').replace(/\n/g, '<br/>');
+    };
+
+    const api = async (method, path, body) => {
+      const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(API_BASE + path, opts);
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+      }
+      if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+      return data;
+    };
+
+    // ── Auth ─────────────────────────────────────────────────────────────────
+    const doLogin = async () => {
+      loginError.value = '';
+      if (!loginForm.email || !loginForm.password) {
+        loginError.value = 'Email dan password wajib diisi.'; return;
+      }
+      loading.value = true;
+      try {
+        const data = await api('POST', '/auth/login', loginForm);
+        Object.assign(user, data.user);
+        // Simpan session sederhana ke sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+
+        const role = String(data.user.role || '').toLowerCase();
+        if (role === 'admin' || data.dashboardType === 'admin') {
+          sessionStorage.setItem('adminUser', JSON.stringify(data.user));
+          window.location.href = API_HOST + (data.dashboardUrl || '/admin.html');
+          return;
+        }
+
+        await loadDashboard();
+        halaman.value = 'dashboard';
+      } catch (e) {
+        loginError.value = e.message;
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const loadCaptcha = async () => {
+      try {
+        const data = await api('GET', '/auth/captcha');
+        captchaQuestion.value = data.captcha || { id: '', question: 'Berapakah 2 + 2?' };
+        registerForm.captcha_id = captchaQuestion.value.id || '';
+      } catch (e) {
+        captchaQuestion.value = { id: '2+2', question: 'Berapakah 2 + 2?' };
+        registerForm.captcha_id = '2+2';
+      }
+    };
+
+    const refreshCaptcha = async () => {
+      registerForm.captcha_answer = '';
+      await loadCaptcha();
+    };
+
+    const resetRegisterForm = () => {
+      registerError.value = '';
+      registerLoading.value = false;
+      registerForm.nama_lengkap = '';
+      registerForm.email = '';
+      registerForm.password = '';
+      registerForm.password_confirm = '';
+      registerForm.captcha_answer = '';
+      registerForm.website = '';
+      registerForm.captcha_id = '';
+      captchaQuestion.value = { id: '', question: '' };
+    };
+
+    const switchAuthMode = async (mode) => {
+      authMode.value = mode;
+      loginError.value = '';
+      registerError.value = '';
+      if (mode === 'register') {
+        resetRegisterForm();
+        await loadCaptcha();
+      }
+    };
+
+    const doRegister = async () => {
+      registerError.value = '';
+      if (!registerForm.nama_lengkap || !registerForm.email || !registerForm.password || !registerForm.password_confirm || !registerForm.captcha_answer) {
+        registerError.value = 'Semua field wajib diisi.'; return;
+      }
+      if (registerForm.password !== registerForm.password_confirm) {
+        registerError.value = 'Password dan konfirmasi password tidak cocok.'; return;
+      }
+      if (registerForm.website) {
+        registerError.value = 'Pendaftaran gagal.'; return;
+      }
+
+      registerLoading.value = true;
+      try {
+        await api('POST', '/auth/register', {
+          nama_lengkap: registerForm.nama_lengkap,
+          email: registerForm.email,
+          password: registerForm.password,
+          password_confirm: registerForm.password_confirm,
+          captcha_id: registerForm.captcha_id,
+          captcha_answer: registerForm.captcha_answer,
+          website: registerForm.website,
+        });
+        showToast('Akun peserta berhasil dibuat. Silakan login.');
+        loginForm.email = registerForm.email;
+        switchAuthMode('login');
+      } catch (e) {
+        registerError.value = e.message;
+        await loadCaptcha();
+      } finally {
+        registerLoading.value = false;
+      }
+    };
+
+    const doLogout = () => {
+      sessionStorage.removeItem('user');
+      stopTimer();
+      halaman.value = 'login';
+      loginForm.email = ''; loginForm.password = '';
+    };
+
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    const loadDashboard = async () => {
+      loadingDashboard.value = true;
+      try {
+        const data = await api('GET', `/dashboard/${user.id}`);
+        kategoriList.value = data.kategori;
+      } catch (e) {
+        showToast('Gagal memuat data: ' + e.message, 'error');
+      } finally {
+        loadingDashboard.value = false;
+      }
+    };
+
+    const badgeColor = (status) => {
+      if (status === 'selesai') return 'bg-sawit-100 text-forest-600';
+      if (status === 'berjalan') return 'bg-amber-100 text-amber-700';
+      return 'bg-forest-50 text-forest-400';
+    };
+
+    // ── Mulai Ujian ───────────────────────────────────────────────────────────
+    const mulaiUjian = async (kat) => {
+      loadingMulai.value = kat.id;
+      try {
+        const data = await api('POST', '/ujian/mulai', { user_id: user.id, kategori_id: kat.id });
+
+        // Set state sesi
+        sesi.id            = data.sesi.id;
+        sesi.nama_kategori = kat.nama_kategori;
+        sesi.waktu_habis   = data.sesi.waktu_habis;
+
+        // Set soal
+        soalList.value   = data.soal;
+        soalAktifIdx.value = 0;
+        ujianSelesai.value = false;
+        drawerOpen.value   = false;
+
+        // Restore jawaban tersimpan
+        Object.keys(jawaban).forEach(k => delete jawaban[k]);
+        data.soal.forEach(s => {
+          if (s.jawaban_tersimpan) jawaban[s.soal_id] = s.jawaban_tersimpan;
+        });
+
+        // Hitung sisa waktu dari waktu_habis server
+        const habis = new Date(data.sesi.waktu_habis).getTime();
+        timerSisa.value = Math.max(0, Math.floor((habis - Date.now()) / 1000));
+        startTimer();
+
+        halaman.value = 'ujian';
+      } catch (e) {
+        showToast('Gagal memulai ujian: ' + e.message, 'error');
+      } finally {
+        loadingMulai.value = null;
+      }
+    };
+
+    // ── Timer ─────────────────────────────────────────────────────────────────
+    const startTimer = () => {
+      stopTimer();
+      timerInterval = setInterval(() => {
+        if (timerSisa.value <= 0) {
+          stopTimer();
+          autoTimeout();
+        } else {
+          timerSisa.value--;
+        }
+      }, 1000);
+    };
+
+    const stopTimer = () => { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } };
+
+    const autoTimeout = async () => {
+      if (ujianSelesai.value) return;
+      ujianSelesai.value = true;
+      showToast('⏰ Waktu habis! Jawaban disimpan otomatis.', 'error', 4000);
+      // Panggil selesai dengan status timeout
+      try {
+        await api('POST', '/ujian/selesai', { sesi_id: sesi.id });
+        // Tandai sebagai timeout di DB (bisa diperluas)
+      } catch { /* silent */ }
+      await tampilHasil();
+    };
+
+    // ── Pilih Jawaban + Auto-Save ──────────────────────────────────────────────
+    const pilihJawaban = async (pilihan) => {
+      if (ujianSelesai.value) return;
+      const soalId = soalAktif.value.soal_id;
+      jawaban[soalId] = pilihan.id;   // update UI segera (optimistic)
+
+      // Auto-save di background — tidak block UI
+      try {
+        await api('POST', '/ujian/save', {
+          sesi_id:   sesi.id,
+          soal_id:   soalId,
+          pilihan_id: pilihan.id,
+        });
+      } catch (e) {
+        // Tampilkan peringatan kecil tapi jangan batalkan pilihan
+        showToast('⚠ Auto-save gagal, mencoba ulang…', 'error', 2000);
+      }
+    };
+
+    // ── Navigasi Soal ─────────────────────────────────────────────────────────
+    const naviSoal = (delta) => {
+      const next = soalAktifIdx.value + delta;
+      if (next >= 0 && next < soalList.value.length) soalAktifIdx.value = next;
+    };
+
+    // ── Selesai Ujian ─────────────────────────────────────────────────────────
+    const konfirmasiSelesai = () => { showModal.value = true; };
+
+    const doSelesai = async () => {
+      loadingSelesai.value = true;
+      try {
+        const data = await api('POST', '/ujian/selesai', { sesi_id: sesi.id });
+        Object.assign(hasil, data);
+        showModal.value  = false;
+        ujianSelesai.value = true;
+        stopTimer();
+        await tampilHasil();
+      } catch (e) {
+        showToast('Gagal menyelesaikan ujian: ' + e.message, 'error');
+      } finally {
+        loadingSelesai.value = false;
+      }
+    };
+
+    const tampilHasil = async () => {
+      // Ambil hasil terbaru dari API jika belum ada
+      if (!hasil.skor_akhir && hasil.skor_akhir !== 0) {
+        try {
+          const data = await api('POST', '/ujian/selesai', { sesi_id: sesi.id });
+          Object.assign(hasil, data);
+        } catch { /* gunakan data yang ada */ }
+      }
+      halaman.value = 'hasil';
+    };
+
+    const keDashboard = async () => {
+      stopTimer();
+      await loadDashboard();
+      halaman.value = 'dashboard';
+    };
+
+    // ── Session Restore (refresh browser) ────────────────────────────────────
+    onMounted(() => {
+      const saved = sessionStorage.getItem('user');
+      const adminSaved = sessionStorage.getItem('adminUser');
+      if (adminSaved) {
+        try {
+          const u = JSON.parse(adminSaved);
+          if (String(u.role || '').toLowerCase() === 'admin') {
+            window.location.href = 'admin.html';
+            return;
+          }
+        } catch { sessionStorage.removeItem('adminUser'); }
+      }
+      if (saved) {
+        try {
+          const u = JSON.parse(saved);
+          Object.assign(user, u);
+          loadDashboard().then(() => { halaman.value = 'dashboard'; });
+        } catch { sessionStorage.removeItem('user'); }
+      }
+    });
+
+    onUnmounted(() => stopTimer());
+
+    return {
+      halaman, loading, loginError, showPwd, authMode, loginForm,
+      registerError, registerLoading, registerForm, captchaQuestion,
+      user, kategoriList, loadingDashboard, loadingMulai,
+      sesi, soalList, soalAktif, soalAktifIdx, jawaban,
+      jumlahTerjawab, formatTimer, timerKritis, timerSisa,
+      drawerOpen, showModal, loadingSelesai, ujianSelesai,
+      hasil, toast,
+      doLogin, doLogout,
+      loadDashboard, badgeColor,
+      mulaiUjian, pilihJawaban, naviSoal,
+      konfirmasiSelesai, doSelesai, keDashboard,
+      switchAuthMode, doRegister, refreshCaptcha,
+      renderSoalText,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
