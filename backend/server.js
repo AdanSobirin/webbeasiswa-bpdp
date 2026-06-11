@@ -848,24 +848,33 @@ app.post('/api/admin/sesi/:id/lock-total', requireAdmin, async (req, res) => {
       return sendError(res, 404, 'Sesi tidak ditemukan.');
     }
 
-    // 2. Paksa ubah status apa pun (baik 'berjalan' maupun status pendaftaran awal) menjadi 'selesai'
-    // Dan kunci waktu habisnya ke detik ini (NOW())
+    // 2. Paksa ubah status menjadi 'selesai' dan kunci waktu_habis ke NOW()
+    // PERBAIKAN: Gunakan COALESCE pada waktu_mulai. Jika akun belum mulai (NULL), 
+    // maka otomatis diisi waktu detik ini (NOW()) agar data database tetap rapi.
     await client.query(
       `UPDATE sesi_ujian 
-       SET status = 'selesai', waktu_habis = NOW() 
+       SET status = 'selesai', 
+           waktu_mulai = COALESCE(waktu_mulai, NOW()), 
+           waktu_habis = NOW() 
        WHERE id = $1`,
       [id]
     );
 
     // 3. Hitung skor total otomatis dari jawaban yang sempat disimpan oleh peserta
+    // PERBAIKAN: Menggunakan LEFT JOIN bersumber dari sesi_ujian. 
+    // Jika peserta belum menjawab/belum mulai, query tidak akan kosong/error, melainkan menghasilkan angka 0.
     const skorResult = await client.query(
       `SELECT COALESCE(SUM(pj.poin), 0) AS total_skor
-       FROM jawaban_peserta jp
-       JOIN pilihan_jawaban pj ON pj.id = jp.pilihan_id
-       WHERE jp.sesi_id = $1`,
+       FROM sesi_ujian su
+       LEFT JOIN jawaban_peserta jp ON jp.sesi_id = su.id
+       LEFT JOIN pilihan_jawaban pj ON pj.id = jp.pilihan_id
+       WHERE su.id = $1
+       GROUP BY su.id`,
       [id]
     );
-    const skorAkhir = Number(skorResult.rows[0].total_skor);
+    
+    // Ambil skor, jika row tidak ditemukan (aman), default ke 0
+    const skorAkhir = skorResult.rowCount > 0 ? Number(skorResult.rows[0].total_skor) : 0;
 
     // 4. Masukkan hasil kalkulasi skor akhir tersebut ke database peserta
     await client.query(
