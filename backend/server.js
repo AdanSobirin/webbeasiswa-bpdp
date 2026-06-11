@@ -830,7 +830,65 @@ app.post('/api/admin/sesi/:id/reopen', requireAdmin, async (req, res) => {
     client.release();
   }
 });
+app.post('/api/admin/sesi/:id/lock-total', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
 
+    // 1. Ambil status sesi saat ini untuk memastikan sesinya ada
+    const sesiCheck = await client.query(
+      `SELECT id, status FROM sesi_ujian WHERE id = $1`,
+      [id]
+    );
+
+    if (sesiCheck.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return sendError(res, 404, 'Sesi tidak ditemukan.');
+    }
+
+    // 2. Paksa ubah status apa pun (baik 'berjalan' maupun status pendaftaran awal) menjadi 'selesai'
+    // Dan kunci waktu habisnya ke detik ini (NOW())
+    await client.query(
+      `UPDATE sesi_ujian 
+       SET status = 'selesai', waktu_habis = NOW() 
+       WHERE id = $1`,
+      [id]
+    );
+
+    // 3. Hitung skor total otomatis dari jawaban yang sempat disimpan oleh peserta
+    const skorResult = await client.query(
+      `SELECT COALESCE(SUM(pj.poin), 0) AS total_skor
+       FROM jawaban_peserta jp
+       JOIN pilihan_jawaban pj ON pj.id = jp.pilihan_id
+       WHERE jp.sesi_id = $1`,
+      [id]
+    );
+    const skorAkhir = Number(skorResult.rows[0].total_skor);
+
+    // 4. Masukkan hasil kalkulasi skor akhir tersebut ke database peserta
+    await client.query(
+      `UPDATE sesi_ujian
+       SET skor_akhir = $1
+       WHERE id = $2`,
+      [skorAkhir, id]
+    );
+
+    await client.query('COMMIT');
+    return res.json({ 
+      success: true, 
+      message: 'Sesi ujian berhasil ditutup paksa dan nilai telah dihitung.' 
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[admin/sesi:lock-total]', err);
+    return sendError(res, 500, 'Gagal mengunci sesi ujian secara total.', err.message);
+  } finally {
+    client.release();
+  }
+});
 app.post('/api/admin/sesi/:sesi_id/soal/:soal_id/lock', requireAdmin, async (req, res) => {
   const { sesi_id, soal_id } = req.params;
   try {

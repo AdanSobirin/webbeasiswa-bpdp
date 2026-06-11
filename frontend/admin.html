@@ -324,10 +324,11 @@ select.input-dark option{background:#2e2e40;color:#e9e9ed}
                 <td class="px-5 py-4 text-right text-ink-500 text-xs hidden xl:table-cell">{{ act.waktu_habis ? fmtDate(act.waktu_habis) : '-' }}</td>
                 <td class="px-5 py-4 text-right">
                   <div class="flex flex-col gap-2 items-end">
-                    <button @click="openLockSoalModal(act.sesi_id, act.nama_lengkap, act.nama_kategori)"
-                            class="btn btn-sky text-xs px-3 py-2">
-                      🔒 Kunci Soal
-                    </button>
+                    <button v-if="act.status !== 'selesai'"
+                    @click="openLockSoalModal(act.sesi_id, act.nama_lengkap, act.nama_kategori)"
+                    class="btn btn-ghost text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 text-xs px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+              🔒 Kunci Sesi
+            </button>
                     <button v-if="act.status === 'selesai'"
                             @click="reopenSession(act.sesi_id)"
                             class="btn btn-amber text-xs px-3 py-2">
@@ -651,49 +652,40 @@ select.input-dark option{background:#2e2e40;color:#e9e9ed}
 
 <!-- ══════════════ MODAL KUNCI SOAL ══════════════ -->
 <div v-if="lockSoalModal.show" class="modal-overlay" @click.self="lockSoalModal.show=false">
-  <div class="modal-box p-6 sm:p-7 max-w-lg">
+  <div class="modal-box p-6 sm:p-7 max-w-md bg-ink-900 border border-ink-800 rounded-2xl shadow-xl">
     <div class="flex items-center justify-between mb-5">
-      <div>
-        <h3 class="font-bold text-white text-base">🔒 Kunci Soal</h3>
-        <p class="text-xs text-ink-500 mt-1">Peserta: <strong>{{ lockSoalModal.pesertaNama }}</strong></p>
-        <p class="text-xs text-ink-500">Kategori: <strong>{{ lockSoalModal.kategoriNama }}</strong></p>
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🔒</span>
+        <h3 class="font-bold text-white text-base">Konfirmasi Kunci Ujian</h3>
       </div>
-      <button @click="lockSoalModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      <button @click="lockSoalModal.show=false" class="p-1.5 rounded-xl hover:bg-ink-800 text-ink-500 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M6 18L18 6M6 6l12 12"/>
+        </svg>
       </button>
     </div>
 
-    <div v-if="lockSoalModal.loading" class="space-y-3">
-      <div v-for="i in 3" :key="i" class="h-12 bg-ink-800 rounded-lg animate-pulse"></div>
+    <div class="mb-5 p-4 bg-ink-950/60 border border-ink-800/80 rounded-xl space-y-2 text-sm text-ink-300">
+      <div>Peserta: <strong class="text-white font-semibold">{{ lockSoalModal.pesertaNama }}</strong></div>
+      <div>Kategori: <strong class="text-white font-semibold">{{ lockSoalModal.kategoriNama }}</strong></div>
     </div>
 
-    <div v-else class="space-y-2 max-h-96 overflow-y-auto">
-      <div v-if="lockSoalModal.soalList.length === 0" class="text-center py-8 text-ink-500">
-        Belum ada soal untuk kategori ini.
-      </div>
-      <div v-for="soal in lockSoalModal.soalList" :key="soal.soal_id"
-           class="flex items-start justify-between gap-3 p-3 rounded-lg border transition-colors"
-           :class="soal.is_locked ? 'border-rose-700/50 bg-rose-900/15' : 'border-ink-700 bg-ink-900/50'">
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-white truncate">Soal #{{ soal.soal_id }}</p>
-          <p class="text-xs text-ink-400 line-clamp-2">{{ soal.teks_soal }}</p>
-        </div>
-        <button @click="soal.is_locked ? unlockSoal(soal.soal_id) : lockSoal(soal.soal_id)"
-                :disabled="lockSoalModal.locking"
-                :class="soal.is_locked ? 'btn-danger' : 'btn-success'"
-                class="btn text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">
-          <span v-if="lockSoalModal.locking === soal.soal_id" class="spinner"></span>
-          <span v-else>{{ soal.is_locked ? 'Buka 🔓' : 'Kunci 🔒' }}</span>
-        </button>
-      </div>
+    <p class="text-xs text-ink-400 mb-5 leading-relaxed">
+      Apakah Anda yakin ingin mengunci sesi ujian peserta ini? Status ujian akan langsung diubah menjadi <span class="text-rose-400 font-semibold">"selesai"</span>, pengerjaan dihentikan, dan sistem akan mengalkulasi nilai dari jawaban yang sempat tersimpan.
+    </p>
+
+    <div v-if="lockSoalModal.err" class="mb-4 text-xs text-rose-400 bg-rose-950/30 border border-rose-900/50 p-3 rounded-xl">
+      ⚠️ {{ lockSoalModal.err }}
     </div>
 
-    <div v-if="lockSoalModal.err" class="mt-4 px-4 py-2.5 rounded-xl bg-rose-900/30 border border-rose-800 text-rose-300 text-sm">
-      {{ lockSoalModal.err }}
-    </div>
-
-    <div class="flex gap-3 mt-6">
-      <button @click="lockSoalModal.show=false" class="btn btn-primary flex-1">Selesai</button>
+    <div class="flex gap-3">
+      <button @click="lockSoalModal.show=false" :disabled="lockSoalModal.loading" class="btn btn-ghost flex-1 text-xs">
+        Batal
+      </button>
+      <button @click="submitLockSoal" :disabled="lockSoalModal.loading" class="btn btn-danger flex-1 text-xs bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 rounded-xl flex items-center justify-center gap-2">
+        <span v-if="lockSoalModal.loading" class="spinner border-2 border-white/30 border-t-white w-4 h-4 rounded-full animate-spin"></span>
+        <span v-else>Ya, Kunci Total</span>
+      </button>
     </div>
   </div>
 </div>
@@ -1079,20 +1071,8 @@ createApp({
       lockSoalModal.kategoriNama = kategoriNama;
       lockSoalModal.show = true;
       lockSoalModal.err = '';
-      lockSoalModal.loading = true;
-      await loadSoalList(sesiId);
-    };
-
-    const loadSoalList = async (sesiId) => {
-      try {
-        const d = await api('GET', `/admin/sesi/${sesiId}/soal`);
-        lockSoalModal.soalList = d.soal || [];
-      } catch (e) {
-        lockSoalModal.err = 'Gagal memuat soal: ' + e.message;
-        lockSoalModal.soalList = [];
-      } finally {
-        lockSoalModal.loading = false;
-      }
+      lockSoalModal.loading = false;
+      
     };
 
     const lockSoal = async (soalId) => {
@@ -1146,6 +1126,24 @@ createApp({
         window.location.href = 'index.html';
       }
     });
+
+    // ── submitLockSoal ───────────────────────────────────────────────────────
+    const submitLockSoal = async () => {
+      if (!lockSoalModal.sesiId) return;
+      lockSoalModal.loading = true;
+      lockSoalModal.err = '';
+      try {
+        // Mengirimkan permintaan kunci sesi global ke backend
+        await api('POST', `/admin/sesi/${lockSoalModal.sesiId}/lock-total`);
+        showToast('🔒 Seluruh sesi ujian peserta berhasil dikunci.');
+        lockSoalModal.show = false;
+        await loadAktivitas(); // Memuat ulang tabel aktivitas utama admin
+      } catch (e) {
+        lockSoalModal.err = 'Gagal mengunci sesi total: ' + e.message;
+      } finally {
+        lockSoalModal.loading = false;
+      }
+    };
 
     return {
       page, menu, mobileNav, loading, saving, saveOk, adminName, loginErr, loginForm,
