@@ -931,7 +931,7 @@ const startServer = async () => {
   await ensureDefaultKategori();
   const server = app.listen(PORT, () => {
     console.log(`✅ Server berjalan di http://localhost:${PORT}`);
-    console.log(`📊 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5433}/${process.env.DB_NAME || 'beasiswa_sawit_schema'}`);
+    console.log(`📊 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5433}/${process.env.DB_NAME || 'beasiswa_sawit'}`);
   });
 
   server.on('error', (err) => {
