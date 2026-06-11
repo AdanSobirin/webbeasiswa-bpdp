@@ -1072,7 +1072,7 @@ createApp({
         showToast('Gagal membuka ulang sesi: ' + e.message, 'error');
       }
     };
-
+// ── Lock Soal Session ─────────────────────────────────────────────────────
     const openLockSoalModal = async (sesiId, pesertaNama, kategoriNama) => {
       lockSoalModal.sesiId = sesiId;
       lockSoalModal.pesertaNama = pesertaNama;
@@ -1158,7 +1158,7 @@ createApp({
       openSoalModal, saveSoal, deleteSoal, onBenarChange, handleImageUpload,
       selectedKategoriFilter, filteredSoalList, reopenSession,
       kategoriModal, kategoriForm, openKategoriModal, saveKategori, deleteKategori,
-      lockSoalModal, openLockSoalModal, lockSoal, unlockSoal,
+      lockSoalModal, openLockSoalModal, lockSoal, submitLockSoal, unlockSoal,
     };
   }
 }).mount('#app');
